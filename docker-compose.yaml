@@ -1,0 +1,16 @@
+version: '3.1'
+
+services:
+  tasmota-exporter:
+    image: tasmota-exporter:latest
+    restart: always
+    container_name: tasmota-exporter
+    ports:
+      - 8000:8000
+    networks:
+      - default
+      - proxy
+
+networks:
+  proxy:
+    external: true
