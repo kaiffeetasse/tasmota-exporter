@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 EXPORT_INTERVAL_SECONDS = int(os.environ.get("EXPORT_INTERVAL_SECONDS"))
 TASMOTA_URL = os.environ.get("TASMOTA_URL")
 
-start_http_server(8000)
+start_http_server(8001)
 
 
 def get_metrics():
