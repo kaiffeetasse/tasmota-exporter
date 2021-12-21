@@ -15,49 +15,60 @@ logger = logging.getLogger(__name__)
 
 EXPORT_INTERVAL_SECONDS = int(os.environ.get("EXPORT_INTERVAL_SECONDS"))
 TASMOTA_URL = os.environ.get("TASMOTA_URL")
+ERROR_SLEEP_MINUTES = 1
 
 start_http_server(8001)
 
 
 def get_metrics():
-    url = TASMOTA_URL + "/?m=1"
-
-    response = requests.request("GET", url)
-
-    text = response.text.split("</table>")[0]
-    metrics_text = text.split("{e}{s}")
-
-    metrics = []
-
-    for metric in metrics_text:
-        metric = metric \
-            .replace("{t}{s}", "") \
-            .replace("{e}", "") \
-            .strip()
-
-        metric_splitted = metric.split("{m}")
-
-        metric_key = metric_splitted[0].strip()
-        metric_value_with_unit = metric_splitted[1].strip()
-        metric_value = metric_value_with_unit.split(" ")[0]
-        metric_unit = ""
+    while True:
 
         try:
-            metric_unit = metric_value_with_unit.split(" ")[1]
-        except:
-            pass
 
-        # print(metric_key + " = " + metric_value + " " + metric_unit)
+            metrics = []
 
-        metrics.append(
-            {
-                'metric_key': metric_key,
-                'metric_value': metric_value,
-                'metric_unit': metric_unit
-            }
-        )
+            url = TASMOTA_URL + "/?m=1"
 
-    return metrics
+            response = requests.request("GET", url)
+
+            text = response.text.split("</table>")[0]
+            metrics_text = text.split("{e}{s}")
+
+            for metric in metrics_text:
+                metric = metric \
+                    .replace("{t}{s}", "") \
+                    .replace("{e}", "") \
+                    .strip()
+
+                metric_splitted = metric.split("{m}")
+
+                metric_key = metric_splitted[0].strip()
+                metric_value_with_unit = metric_splitted[1].strip()
+                metric_value = metric_value_with_unit.split(" ")[0]
+                metric_unit = ""
+
+                try:
+                    metric_unit = metric_value_with_unit.split(" ")[1]
+                except:
+                    pass
+
+                # print(metric_key + " = " + metric_value + " " + metric_unit)
+
+                metrics.append(
+                    {
+                        'metric_key': metric_key,
+                        'metric_value': metric_value,
+                        'metric_unit': metric_unit
+                    }
+                )
+
+            return metrics
+
+        except Exception as e:
+            logger.error("Error while getting metrics:")
+            logger.exception(e)
+            logger.info("sleeping for " + str(ERROR_SLEEP_MINUTES) + " minutes")
+            time.sleep(ERROR_SLEEP_MINUTES)
 
 
 def get_formatted_metric_key(metric_key):
