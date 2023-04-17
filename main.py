@@ -4,6 +4,8 @@ import requests
 from prometheus_client import Gauge, start_http_server
 import os
 import logging
+from bs4 import BeautifulSoup
+
 
 load_dotenv()
 
@@ -30,9 +32,10 @@ def get_metrics():
             url = TASMOTA_URL + "/?m=1"
 
             response = requests.request("GET", url)
+            soup = BeautifulSoup(response.text, features="html.parser")
+            text = soup.get_text()
 
-            text = response.text.split("</table>")[0]
-            metrics_text = text.split("{e}{s}")
+            metrics_text = text.split("{e}{s}")[1:]
 
             for metric in metrics_text:
                 metric = metric \
@@ -44,7 +47,7 @@ def get_metrics():
 
                 metric_key = metric_splitted[0].strip()
                 metric_value_with_unit = metric_splitted[1].strip()
-                metric_value = metric_value_with_unit.split(" ")[0]
+                metric_value = metric_value_with_unit.split(" ")[0].strip()
                 metric_unit = ""
 
                 try:
